@@ -1,20 +1,43 @@
-// import React from 'react';
-// import { createNativeStackNavigator } from '@react-navigation/native-stack';
-// import HomeScreen from '../screens/HomeScreen';
-// import DetailsScreen from '../screens/DetailsScreen';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-// export type RootStackParamList = {
-//   Home: undefined;
-//   Details: { itemId: number };
-// };
+import HomeScreen from '../screens/HomeScreen';
+import Device from '../screens/Device';
+import NotActiveBluetooth from '../screens/NotActiveBluetooth'; // Changed to default import
+import BluetoothScanScreen from '../screens/BluetoothScanScreen';
+import Timer from '../screens/Timer';
+import DetailsScreen from '../screens/DetailsScreen';
 
-// const Stack = createNativeStackNavigator<RootStackParamList>();
+export type RootStackParamList = {
+    Home: undefined;
+    Device: undefined;
+    NotActiveBluetooth: undefined;
+    BluetoothScan: undefined; // Add this new route
+    Timer: undefined;
+    Details: { itemId: string };
+};
 
-// const AppNavigator = () => (
-//   <Stack.Navigator initialRouteName="Home">
-//     <Stack.Screen name="Home" component={HomeScreen} />
-//     <Stack.Screen name="Details" component={DetailsScreen} />
-//   </Stack.Navigator>
-// );
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// export default AppNavigator;
+const AppNavigator = () => {
+    return (
+        <NavigationContainer>
+            <Stack.Navigator
+                initialRouteName="Home"
+                screenOptions={{
+                    headerShown: false,
+                }}
+            >
+                <Stack.Screen name="Home" component={HomeScreen} />
+                <Stack.Screen name="Device" component={Device} />
+                <Stack.Screen name="NotActiveBluetooth" component={NotActiveBluetooth} />
+                <Stack.Screen name="BluetoothScan" component={BluetoothScanScreen} />
+                <Stack.Screen name="Timer" component={Timer} />
+                <Stack.Screen name="Details" component={DetailsScreen} />
+            </Stack.Navigator>
+        </NavigationContainer>
+    );
+};
+
+export default AppNavigator;

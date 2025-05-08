@@ -1,16 +1,26 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  Button, 
-  TextInput, 
-  Switch, 
+import React from 'react';
+import {
+  View,
+  Text,
   ImageBackground,
-  StyleSheet, 
+  StyleSheet,
   Image,
-  TouchableOpacity } from 'react-native';
+  TouchableOpacity
+} from 'react-native';
+import { NavigationProp } from '@react-navigation/native';
 
-const HomeScreen = ({ navigation }) => {
+// Define the navigation type
+type HomeScreenNavigationProp = NavigationProp<{
+  Device: undefined;
+  BluetoothScan: undefined;
+}>;
+
+// Define props type for the component
+type HomeScreenProps = {
+  navigation: HomeScreenNavigationProp;
+};
+
+const HomeScreen = ({ navigation }: HomeScreenProps) => {
   return (
     <ImageBackground
       source={require('../screens/Background.png')} // Local image
@@ -33,7 +43,7 @@ const HomeScreen = ({ navigation }) => {
               />
               <View style={styles.textContainer}>
                 <Text style={styles.deviceName}>SW_0</Text>
-                <Text style={styles.status}>Connected</Text>
+                <Text style={styles.status}>Connected via Bluetooth</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -49,7 +59,7 @@ const HomeScreen = ({ navigation }) => {
             </View>
           </View>
           <TouchableOpacity
-            onPress={() => navigation.navigate('NotActiveBluetooth')}>
+            onPress={() => navigation.navigate('BluetoothScan')}>
             <View style={styles.card}>
               <Text style={styles.status}>+ Add Device</Text>
             </View>
@@ -68,27 +78,27 @@ const styles = StyleSheet.create({
   },
 
   container: {
-      // backgroundColor: '#38343c',
-      height: '100%',
+    // backgroundColor: '#38343c',
+    height: '100%',
   },
 
-  title:{
+  title: {
     marginTop: '5%',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  titleText:{
+  titleText: {
     fontSize: 32,
     color: 'white'
   },
 
-  content:{
+  content: {
     margin: '5%',
     marginTop: '30%'
   },
 
-  contentText:{
+  contentText: {
     fontSize: 18,
     color: 'white',
   },

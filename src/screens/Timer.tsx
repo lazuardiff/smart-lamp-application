@@ -1,34 +1,46 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
+import {
+  View,
+  Text,
   Button,
-  Switch, 
-  StyleSheet, 
+  Switch,
+  StyleSheet,
   Image,
-  TouchableOpacity } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
+  TouchableOpacity,
+  Platform  // Added Platform import
+} from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker'; // Added DateTimePickerEvent type
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
+import { NavigationProp } from '@react-navigation/native'; // Added NavigationProp
+
+// Define navigation prop type
+type TimerScreenNavigationProp = NavigationProp<{
+  Home: undefined;
+}>;
+
+// Define props type for the component
+type TimerProps = {
+  navigation: TimerScreenNavigationProp;
+};
 
 const data = [
   { label: 'Raindrop', value: '1' },
   { label: 'Nature in the morning', value: '2' },
 ];
 
-const Timer = ({ navigation }) => {
+const Timer = ({ navigation }: TimerProps) => {
   const [fromTime, setFromTime] = useState(new Date());
   const [toTime, setToTime] = useState(new Date());
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
 
-  const onChangeFrom = (event, selectedTime) => {
+  const onChangeFrom = (event: DateTimePickerEvent, selectedTime?: Date) => {
     const currentTime = selectedTime || fromTime;
     setShowFromPicker(Platform.OS === 'ios');
     setFromTime(currentTime);
   };
 
-  const onChangeTo = (event, selectedTime) => {
+  const onChangeTo = (event: DateTimePickerEvent, selectedTime?: Date) => {
     const currentTime = selectedTime || toTime;
     setShowToPicker(Platform.OS === 'ios');
     setToTime(currentTime);
@@ -41,9 +53,9 @@ const Timer = ({ navigation }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Image source={require('../../assets/Back.png')} 
-          style={styles.backImage}
-          resizeMode="contain"
+          <Image source={require('../../assets/Back.png')}
+            style={styles.backImage}
+            resizeMode="contain"
           />
         </TouchableOpacity>
       </View>
@@ -96,7 +108,7 @@ const Timer = ({ navigation }) => {
             </Text>
           </View>
         </View>
-        
+
         <View style={styles.cardFeatures}>
           <View style={styles.row}>
             <Text style={styles.label}>
@@ -130,11 +142,11 @@ export default Timer;
 
 const styles = StyleSheet.create({
   container: {
-      backgroundColor: '#38343c',
-      height: '100%',
+    backgroundColor: '#38343c',
+    height: '100%',
   },
 
-  header:{
+  header: {
     marginTop: '5%',
     width: '10%',
     backgroundColor: '#38343c',
@@ -146,11 +158,11 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
 
-  content:{
+  content: {
     margin: '5%',
   },
 
-  contentText:{
+  contentText: {
     fontSize: 15,
     color: 'white',
     marginTop: '10%'
@@ -222,8 +234,8 @@ const styles = StyleSheet.create({
     color: '#000',
   },
 
-  timeContainer:{
-    alignItems: 'center', 
+  timeContainer: {
+    alignItems: 'center',
     justifyContent: 'center'
   },
 

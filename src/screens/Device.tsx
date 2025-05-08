@@ -1,71 +1,98 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  ScrollView, 
-  Switch, 
-  StyleSheet, 
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Switch,
+  StyleSheet,
   Image,
-  TouchableOpacity } from 'react-native';
-import Slider from '@react-native-community/slider';
-import { Dropdown } from 'react-native-element-dropdown';
-import Icon from 'react-native-vector-icons/Ionicons';
+  TouchableOpacity,
+  Alert
+} from 'react-native';
+import { NavigationProp } from '@react-navigation/native';
+import ESP32Service from '../services/ESP32Service';
 
-const data = [
-  { label: 'Raindrop', value: '1' },
-  { label: 'Nature in the morning', value: '2' },
-];
+// Define the navigation type
+type DeviceScreenNavigationProp = NavigationProp<{
+  NotActiveBluetooth: undefined;
+  Home: undefined;
+}>;
 
-const Device = ({ navigation }) => {
+// Define props type for the component
+type DeviceProps = {
+  navigation: DeviceScreenNavigationProp;
+};
+
+const Device = ({ navigation }: DeviceProps) => {
   const [isEnabledNL, setIsEnabledNL] = useState(false);
-  const [isEnabledNS, setIsEnabledNS] = useState(false);
-  const [isEnabledAT, setIsEnabledAT] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+  const [deviceState, setDeviceState] = useState({
+    isOn: false,
+    brightness: 50,
+    nightLightBrightness: 50
+  });
 
   const nightLights = () => setIsEnabledNL(previousState => !previousState);
-  const [roomLight, setRoomLight] = useState(50);
-  const snapToStepRL = (val) => {
-    const levels = [0, 50, 100];
-    const closest = levels.reduce((prev, curr) =>
-      Math.abs(curr - val) < Math.abs(prev - val) ? curr : prev
-    );
-    setValue(closest);
-  };
-  const getLabelRL = () => {
-    if (value === 0) return 'Redup';
-    if (value === 50) return 'Sedang';
-    if (value === 100) return 'Terang';
-    return '';
+
+  const toggleLight = async (isOn: boolean) => {
+    try {
+      let success;
+
+      if (isOn) {
+        success = await ESP32Service.turnLedOn();
+      } else {
+        success = await ESP32Service.turnLedOff();
+      }
+
+      if (success) {
+        setDeviceState({ ...deviceState, isOn });
+      } else {
+        Alert.alert('Failed to control LED');
+      }
+    } catch (error) {
+      console.error('Error controlling LED:', error);
+    }
   };
 
-  const [nightLightLevel, setNightLightLevel] = useState(50);
-  const snapToStepNL = (val) => {
-    const levels = [0, 50, 100];
-    const closest = levels.reduce((prev, curr) =>
-      Math.abs(curr - val) < Math.abs(prev - val) ? curr : prev
-    );
-    setValue2(closest);
-  };
-  const getLabelNL = () => {
-    if (value2 === 0) return 'Redup';
-    if (value2 === 50) return 'Sedang';
-    if (value2 === 100) return 'Terang';
-    return '';
-  };
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        if (ESP32Service.isConnected && ESP32Service.device) {
+          setConnectionStatus('Connected via Bluetooth');
 
-  const natureSounds = () => setIsEnabledNS(previousState => !previousState);
-  const [value, setValue] = useState(null);
-  const [value2, setValue2] = useState(null);
-  const [volume, setVolume] = useState(50);
+          const status = await ESP32Service.getLedStatus();
+          if (status) {
+            setDeviceState({
+              isOn: status.isOn,
+              brightness: 50,
+              nightLightBrightness: 50
+            });
+            setIsEnabledNL(status.isOn);
+          }
+        } else {
+          setConnectionStatus('Not connected');
+          navigation.navigate('NotActiveBluetooth');
+        }
+      } catch (error) {
+        console.error('Error checking BLE connection:', error);
+        setConnectionStatus('Connection error');
+      }
+    };
 
-  const aromaTherapy = () => setIsEnabledAT(previousState => !previousState);
+    checkConnection();
+
+    return () => {
+      // Don't disconnect when navigating away
+    };
+  }, []);
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Image source={require('../../assets/Back.png')} 
-          style={styles.backImage}
-          resizeMode="contain"
+          <Image source={require('../../assets/Back.png')}
+            style={styles.backImage}
+            resizeMode="contain"
           />
         </TouchableOpacity>
       </View>
@@ -78,7 +105,8 @@ const Device = ({ navigation }) => {
             resizeMode="contain"
           />
           <View style={styles.textContainer}>
-            <Text style={styles.deviceName}>This device is On</Text>
+            <Text style={styles.deviceName}>This device is {deviceState.isOn ? 'On' : 'Off'}</Text>
+            <Text style={styles.status}>{connectionStatus}</Text>
           </View>
         </View>
 
@@ -93,107 +121,13 @@ const Device = ({ navigation }) => {
               trackColor={{ false: '#767577', true: '#81b0ff' }}
               thumbColor={isEnabledNL ? '#f5dd4b' : '#f4f3f4'}
               ios_backgroundColor="#3e3e3e"
-              onValueChange={nightLights}
+              onValueChange={(value) => {
+                nightLights();
+                toggleLight(value);
+              }}
               value={isEnabledNL}
             />
           </View>
-
-          {isEnabledNL && (
-            <View style={styles.sliderBox}>
-              <Text style={styles.sliderTitle}>Adjust room light intensity</Text>
-              <Text style={styles.sliderLabel}>Room lighting</Text>
-              <Slider
-                value={roomLight}
-                onValueChange={setRoomLight}
-                onSlidingComplete={snapToStepRL}
-                minimumValue={0}
-                maximumValue={100}
-              />
-              <Text style={{ color: 'black', marginBottom: 10 }}>Level: {getLabelRL()}</Text>
-
-              <Text style={styles.sliderLabel}>Nightlight</Text>
-              <Slider
-                value={nightLightLevel}
-                onValueChange={setNightLightLevel}
-                onSlidingComplete={snapToStepNL}
-                minimumValue={0}
-                maximumValue={100}
-              />
-              <Text style={{ color: 'black', marginBottom: 10 }}>Level: {getLabelNL()}</Text>
-            </View>
-          )}
-        </View>
-        <View style={styles.cardFeatures}>
-          <View style={styles.row}>
-            <Text style={styles.label}>
-              🔊 Nature Sounds: {isEnabledNS ? 'ON' : 'OFF'}
-            </Text>
-            <Switch
-              trackColor={{ false: '#767577', true: '#81b0ff' }}
-              thumbColor={isEnabledNS ? '#f5dd4b' : '#f4f3f4'}
-              ios_backgroundColor="#3e3e3e"
-              onValueChange={natureSounds}
-              value={isEnabledNS}
-            />
-          </View>
-          {isEnabledNS && (
-            <View style={styles.sliderBox}>
-              <Text style={styles.sliderTitle}>Sound for Swell</Text>
-              <View style={styles.pickerWrapper}>
-                <Icon name="musical-notes" size={20} color="#fff" style={styles.pickerIconLeft} />
-                <Dropdown
-                  style={styles.dropdown}
-                  placeholderStyle={styles.placeholderStyle}
-                  selectedTextStyle={styles.selectedTextStyle}
-                  inputSearchStyle={styles.inputSearchStyle}
-                  iconStyle={styles.iconStyle}
-                  data={data}
-                  search
-                  maxHeight={300}
-                  labelField="label"
-                  valueField="value"
-                  placeholder="Select item"
-                  searchPlaceholder="Search..."
-                  value={value}
-                  onChange={item => {
-                    setValue(item.value);
-                  }}
-                />
-              </View>
-              <Text style={styles.sliderTitle}>Volume</Text>
-              <Slider
-                value={volume}
-                onValueChange={setVolume}
-                minimumValue={0}
-                maximumValue={100}
-              />
-            </View>
-          )}
-        </View>
-        <View style={styles.cardFeatures}>
-          <View style={styles.row}>
-            <Text style={styles.label}>
-              🧴 Aroma Therapy: {isEnabledAT ? 'ON' : 'OFF'}
-            </Text>
-            <Switch
-              trackColor={{ false: '#767577', true: '#81b0ff' }}
-              thumbColor={isEnabledAT ? '#f5dd4b' : '#f4f3f4'}
-              ios_backgroundColor="#3e3e3e"
-              onValueChange={aromaTherapy}
-              value={isEnabledAT}
-            />
-          </View>
-          
-        </View>
-
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity onPress={() => navigation.navigate('Timer')}>
-            <View style={styles.cardFeatures}>
-              <Text style={styles.label}>
-                Next
-              </Text>
-            </View>
-          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
@@ -204,11 +138,11 @@ export default Device;
 
 const styles = StyleSheet.create({
   container: {
-      backgroundColor: '#38343c',
-      height: '100%',
+    backgroundColor: '#38343c',
+    height: '100%',
   },
 
-  header:{
+  header: {
     marginTop: '5%',
     width: '10%',
     backgroundColor: '#38343c',
@@ -220,11 +154,11 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
 
-  content:{
+  content: {
     margin: '5%',
   },
 
-  contentText:{
+  contentText: {
     fontSize: 15,
     color: 'white',
     marginTop: '10%'
@@ -260,32 +194,10 @@ const styles = StyleSheet.create({
     margin: 5,
   },
 
-  buttonContainer: {
-    borderRadius: 16,
-    shadowRadius: 6,
-    alignItems: 'center',
-  },
-
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  
-  sliderBox: {
-    marginTop: 16,
-  },
-
-  sliderTitle:{
-    color: 'black',
-    marginBottom: 4,
-    fontWeight: 'bold',
-    fontSize: 15,
-  },
-
-  sliderLabel: {
-    color: 'black',
-    marginBottom: 4,
   },
 
   deviceImage: {
@@ -304,69 +216,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Cochin',
     color: '#000',
   },
-  
+
   status: {
     fontSize: 14,
     color: '#888',
     marginTop: 4,
   },
-
-  pickerWrapper: {
-    backgroundColor: '#000',
-    borderRadius: 10,
-    paddingLeft: 35,
-    paddingRight: 10,
-    marginTop: 8,
-    height: 40,
-    justifyContent: 'center',
-  },
-
-  pickerIconLeft: {
-    position: 'absolute',
-    left: 10,
-    top: 10,
-    zIndex: 1,
-  },
-
-  dropdown: {
-    // margin: 10,
-    height: 40,
-    borderBottomColor: 'gray',
-    borderBottomWidth: 0.5,
-  },
-  icon: {
-    marginRight: 5,
-  },
-  placeholderStyle: {
-    fontSize: 16,
-  },
-  selectedTextStyle: {
-    fontSize: 16,
-    color: 'white'
-  },
-  iconStyle: {
-    width: 20,
-    height: 20,
-  },
-  inputSearchStyle: {
-    height: 40,
-    fontSize: 16,
-  },
 });
-
-const pickerSelectStyles = {
-  inputIOS: {
-    color: 'white',
-    fontSize: 14,
-    paddingVertical: 10,
-  },
-  inputAndroid: {
-    color: 'white',
-    fontSize: 14,
-    paddingVertical: 10,
-  },
-  iconContainer: {
-    top: 10,
-    right: 10,
-  },
-};
